@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Хоол Захиалга</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[url('https://images.unsplash.com/photo-1600891964599-f61ba0e24092')] bg-cover bg-center text-gray-800">
+
+  
+  <header class="flex justify-between items-center p-4 bg-white bg-opacity-80 shadow-md">
+    <div class="relative flex items-center gap-4">
+      <input type="text" placeholder="Хоолны нэрээр хайх..." class="px-4 py-2 rounded border" id="searchInput" oninput="searchFood()"/>
+      <div class="relative">
+        <button class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600" onclick="toggleFilter()">Сонголт</button>
+
+        <div id="filterOptions" class="absolute top-12 left-0 bg-white border rounded shadow-md p-4 hidden z-10">
+          <p class="font-semibold mb-2">Улс сонгох:</p>
+          <ul class="space-y-2">
+            <li><button class="text-left w-full hover:bg-gray-100 px-2 py-1 rounded" onclick="filterBy('japan')">Япон хоол</button></li>
+            <li><button class="text-left w-full hover:bg-gray-100 px-2 py-1 rounded" onclick="filterBy('italy')">Итали хоол</button></li>
+            <li><button class="text-left w-full hover:bg-gray-100 px-2 py-1 rounded" onclick="filterBy('mongolia')">Монгол хоол</button></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick="filterBy('foods')">Хоолнууд</button>
+      <button class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600" onclick="filterBy('drinks')">Уух юм</button>
+      <button class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600" onclick="filterBy('side')">Хачир</button>
+
+      <button class="relative px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600" onclick="openCart()">
+        Сагс
+        <span id="cartCount" class="absolute -top-2 -right-2 bg-red-600 text-xs text-white rounded-full px-2">0</span>
+      </button>
+      <button class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="openCheckout()">Захиалга</button>
+    </div>
+  </header>
+
+  
+  <main class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6" id="foodList">
+    
+  </main>
+
+  
+  <div class="flex justify-center gap-2 my-6" id="pagination"></div>
+
+  
+  <div id="cartModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
+    <div class="bg-white p-6 rounded-lg w-full max-w-md">
+      <h2 class="text-xl font-semibold mb-4">Таны сагс</h2>
+      <ul id="cartItems" class="mb-4"></ul>
+      <p class="font-semibold mb-2">Нийт дүн: <span id="totalPrice">0₮</span></p>
+      <button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600" onclick="closeCart()">Хаах</button>
+    </div>
+  </div>
+
+  
+  <div id="checkoutModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
+    <div class="bg-white p-6 rounded-lg w-full max-w-md">
+      <h2 class="text-xl font-semibold mb-4">Захиалга баталгаажуулах</h2>
+      <input type="text" id="name" placeholder="Нэр" class="w-full mb-2 px-4 py-2 border rounded"/>
+      <input type="text" id="phone" placeholder="Утасны дугаар" class="w-full mb-2 px-4 py-2 border rounded"/>
+      <input type="text" id="address" placeholder="Хаяг" class="w-full mb-4 px-4 py-2 border rounded"/>
+      <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600" onclick="confirmOrder()">Баталгаажуулах</button>
+      <button class="px-4 py-2 ml-2 bg-gray-500 text-white rounded hover:bg-gray-600" onclick="closeCheckout()">Болих</button>
+    </div>
+  </div>
+
+  
+  <div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
+    <div class="bg-white p-6 rounded-lg w-full max-w-md text-center">
+      <p class="text-lg font-semibold mb-4">5619454334 Хаан банк Болд Тэмүүжин</p>
+      <p class="mb-4">Гүйлгээ хийгдсэн эсэхийг шалгана уу.</p>
+      <button class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onclick="closeConfirmation()">Хаах</button>
+    </div>
+  </div>
+
+  <script>
+    const cart = [];
+    const foods = [
+      { id: 1, name: 'Суши', price: 15000, category: 'japan', img: 'sushi.png' },
+      { id: 2, name: 'Пицца', price: 18000, category: 'italy', img: 'pizza.png' },
+      { id: 3, name: 'Кола', price: 2500, category: 'drinks', img: 'cola.png' },
+      { id: 4, name: 'Салад', price: 4500, category: 'side', img: 'salad.png' },
+      { id: 5, name: 'Бууз', price: 12000, category: 'mongolia', img: 'buuz.png' },
+      { id: 6, name: 'Хуушуур', price: 11000, category: 'mongolia', img: 'huushuur.png' },
+      { id: 7, name: 'Ногоотой шөл', price: 8000, category: 'mongolia', img: 'nogootoi shul.png' },
+      { id: 8, name: 'Банштай цай', price: 10000, category: 'mongolia', img: 'banshtai tsai.png' },
+      { id: 9, name: 'Цуйван', price: 9500, category: 'mongolia', img: 'tsuiwan.png' },
+      { id: 10, name: 'Будаатай хуурга', price: 10000, category: 'mongolia', img: 'budaatai huurga.png' },
+      { id: 11, name: 'Хар шөл', price: 9000, category: 'mongolia', img: 'har shul.png' },
+      { id: 12, name: 'Хорхог', price: 22000, category: 'mongolia', img: 'horhog.png' },
+      { id: 13, name: 'Гурилтай шөл', price: 7500, category: 'mongolia', img: 'guriltai shul.png' },
+      { id: 14, name: 'Боодог', price: 25000, category: 'mongolia', img: 'boodog.png' }
+    ];
+
+    let currentCategory = 'foods';
+
+    function renderFoods() {
+      const list = document.getElementById('foodList');
+      list.innerHTML = '';
+      const filtered = foods.filter(f => currentCategory === 'foods' ? ['japan', 'italy', 'mongolia'].includes(f.category) : f.category === currentCategory);
+      filtered.forEach(food => {
+        const item = document.createElement('div');
+        item.className = 'bg-white bg-opacity-80 rounded-lg shadow p-4';
+        item.innerHTML = `
+          <img src="${food.img}" alt="${food.name}" class="w-full h-40 object-cover rounded mb-2"/>
+          <h3 class="text-lg font-semibold">${food.name}</h3>
+          <p class="mb-2">Үнэ: ${food.price}₮</p>
+          <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600" onclick="addToCart(${food.id})">Сагслах</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function toggleFilter() {
+      document.getElementById("filterOptions").classList.toggle("hidden");
+    }
+
+    function filterBy(category) {
+      currentCategory = category;
+      renderFoods();
+    }
+
+    function searchFood() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const list = document.getElementById('foodList');
+      list.innerHTML = '';
+      foods.filter(f => f.name.toLowerCase().includes(query)).forEach(food => {
+        const item = document.createElement('div');
+        item.className = 'bg-white bg-opacity-80 rounded-lg shadow p-4';
+        item.innerHTML = `
+          <img src="${food.img}" alt="${food.name}" class="w-full h-40 object-cover rounded mb-2"/>
+          <h3 class="text-lg font-semibold">${food.name}</h3>
+          <p class="mb-2">Үнэ: ${food.price}₮</p>
+          <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600" onclick="addToCart(${food.id})">Сагслах</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function addToCart(id) {
+      const food = foods.find(f => f.id === id);
+      cart.push(food);
+      document.getElementById("cartCount").innerText = cart.length;
+    }
+
+    function openCart() {
+      const list = document.getElementById("cartItems");
+      const total = document.getElementById("totalPrice");
+      list.innerHTML = '';
+      let sum = 0;
+      cart.forEach((item, index) => {
+        sum += item.price;
+        const li = document.createElement('li');
+        li.className = "flex justify-between mb-2";
+        li.innerHTML = `${item.name} - ${item.price}₮ <button class='text-red-600' onclick='removeFromCart(${index})'>x</button>`;
+        list.appendChild(li);
+      });
+      total.innerText = sum + '₮';
+      document.getElementById("cartModal").classList.remove("hidden");
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      document.getElementById("cartCount").innerText = cart.length;
+      openCart();
+    }
+
+    function closeCart() {
+      document.getElementById("cartModal").classList.add("hidden");
+    }
+
+    function openCheckout() {
+      document.getElementById("checkoutModal").classList.remove("hidden");
+    }
+
+    function closeCheckout() {
+      document.getElementById("checkoutModal").classList.add("hidden");
+    }
+
+    function confirmOrder() {
+      if (cart.length === 0) {
+        alert('Та ямар нэгэн зүйл сагсанд нэмнэ үү.');
+        return;
+      }
+      document.getElementById("checkoutModal").classList.add("hidden");
+      document.getElementById("confirmationModal").classList.remove("hidden");
+    }
+
+    function closeConfirmation() {
+      document.getElementById("confirmationModal").classList.add("hidden");
+    }
+
+    window.onload = renderFoods;
+  </script>
+</body>
+</html>
